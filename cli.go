@@ -30,6 +30,7 @@ func GetCommands() commands {
 	}
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
+	cmds.register("reset", handlerReset)
 	return cmds
 }
 
@@ -80,6 +81,16 @@ func handlerRegister(s *state, cmd command) error {
 	}
 	fmt.Printf("User '%s' was created\n", userName)
 	fmt.Printf("%+v\n", user)
+	return nil
+}
+
+func handlerReset(s *state, cmd command) error {
+	ctx := context.Background()
+	err := s.db.Reset(ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Successfully reset 'users' table")
 	return nil
 }
 
