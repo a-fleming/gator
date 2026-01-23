@@ -29,6 +29,7 @@ func GetCommands() commands {
 	}
 	cmds.register("addfeed", handlerAddFeed)
 	cmds.register("agg", handlerAggregate)
+	cmds.register("feeds", handlerFeeds)
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
 	cmds.register("reset", handlerReset)
@@ -73,6 +74,24 @@ func handlerAggregate(s *state, cmd command) error {
 		return err
 	}
 	fmt.Printf("feed: %+v\n", feed)
+	return nil
+}
+
+func handlerFeeds(s *state, cmd command) error {
+	ctx := context.Background()
+	feeds, err := s.db.GetFeeds(ctx)
+	if err != nil {
+		return err
+	}
+	for _, feed := range feeds {
+		user, err := s.db.GetUserById(ctx, feed.UserID)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("* %s\n", feed.Name)
+		fmt.Printf("--- url: %s\n", feed.Url)
+		fmt.Printf("--- added by: %s\n", user.Name)
+	}
 	return nil
 }
 
