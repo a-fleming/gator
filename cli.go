@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"www.github.com/a-fleming/blog-aggregator/internal/config"
 	"www.github.com/a-fleming/blog-aggregator/internal/database"
 )
@@ -26,12 +27,42 @@ func GetCommands() commands {
 	cmds := commands{
 		cliCommands: map[string]func(*state, command) error{},
 	}
+	cmds.register("addfeed", handlerAddFeed)
 	cmds.register("agg", handlerAggregate)
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
 	cmds.register("reset", handlerReset)
 	cmds.register("users", handlerUsers)
 	return cmds
+}
+
+func handlerAddFeed(s *state, cmd command) error {
+	if len(cmd.arguments) < 2 {
+		return fmt.Errorf("gator addFeed: error: the following arguments are required: name url")
+	}
+	feedName := cmd.arguments[0]
+	feedURL := cmd.arguments[1]
+
+	uid, err := uuid.Parse(s.config.CurrentUserID)
+	params := database.CreateFeedParams{
+		Name:   feedName,
+		Url:    feedURL,
+		UserID: uid,
+	}
+
+	ctx := context.Background()
+	feedInfo, err := s.db.CreateFeed(ctx, params)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Successfully added RSS feed")
+	fmt.Printf("id: %+v\n", feedInfo.ID)
+	fmt.Printf("name: %s\n", feedName)
+	fmt.Printf("url: %s\n", feedURL)
+	fmt.Printf("createAt: %+v\n", feedInfo.CreatedAt)
+	fmt.Printf("updatedAt: %+v\n", feedInfo.UpdatedAt)
+	fmt.Printf("user_id: %+v\n", feedInfo.ID)
+	return nil
 }
 
 func handlerAggregate(s *state, cmd command) error {
@@ -59,7 +90,7 @@ func handlerLogin(s *state, cmd command) error {
 	if err != nil {
 		return err
 	}
-	err = s.config.SetUser(userName)
+	err = s.config.SetUser(userName, user.ID.String())
 	if err != nil {
 		return err
 	}
@@ -79,7 +110,7 @@ func handlerRegister(s *state, cmd command) error {
 		return err
 	}
 
-	err = s.config.SetUser(userName)
+	err = s.config.SetUser(userName, user.ID.String())
 	if err != nil {
 		return err
 	}
