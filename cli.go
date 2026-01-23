@@ -28,11 +28,23 @@ func GetCommands() commands {
 	cmds := commands{
 		cliCommands: map[string]func(*state, command) error{},
 	}
+	cmds.register("agg", handlerAggregate)
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
 	cmds.register("reset", handlerReset)
 	cmds.register("users", handlerUsers)
 	return cmds
+}
+
+func handlerAggregate(s *state, cmd command) error {
+	feedURL := "https://www.wagslane.dev/index.xml"
+	ctx := context.Background()
+	feed, err := fetchFeed(ctx, feedURL)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("feed: %+v\n", feed)
+	return nil
 }
 
 func handlerLogin(s *state, cmd command) error {
