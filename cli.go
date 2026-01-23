@@ -1,13 +1,18 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"time"
 
+	"github.com/google/uuid"
 	"www.github.com/a-fleming/blog-aggregator/internal/config"
+	"www.github.com/a-fleming/blog-aggregator/internal/database"
 )
 
 type state struct {
 	config *config.Config
+	db     *database.Queries
 }
 
 type command struct {
@@ -24,6 +29,7 @@ func GetCommands() commands {
 		cliCommands: map[string]func(*state, command) error{},
 	}
 	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
 	return cmds
 }
 
@@ -40,6 +46,34 @@ func handlerLogin(s *state, cmd command) error {
 	return nil
 }
 
+func handlerRegister(s *state, cmd command) error {
+	if len(cmd.arguments) == 0 {
+		return fmt.Errorf("gator register: error: the following arguments are required: username")
+	}
+	userName := cmd.arguments[0]
+
+	ctx := context.Background()
+	params := database.CreateUserParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      userName,
+	}
+
+	user, err := s.db.CreateUser(ctx, params)
+	if err != nil {
+		return err
+	}
+
+	err = s.config.SetUser(userName)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("User '%s' was created\n", userName)
+	fmt.Printf("%+v\n", user)
+	return nil
+}
+
 func (c *commands) register(name string, f func(*state, command) error) {
 	c.cliCommands[name] = f
 }
@@ -49,6 +83,5 @@ func (c *commands) run(s *state, cmd command) error {
 	if !exists {
 		return fmt.Errorf("Unknown command '%s'\n", cmd.name)
 	}
-
 	return cmdFunc(s, cmd)
 }
