@@ -30,6 +30,7 @@ func GetCommands() commands {
 	cmds.register("addfeed", handlerAddFeed)
 	cmds.register("agg", handlerAggregate)
 	cmds.register("feeds", handlerFeeds)
+	cmds.register("follow", handlerFollow)
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
 	cmds.register("reset", handlerReset)
@@ -39,7 +40,7 @@ func GetCommands() commands {
 
 func handlerAddFeed(s *state, cmd command) error {
 	if len(cmd.arguments) < 2 {
-		return fmt.Errorf("gator addFeed: error: the following arguments are required: name url")
+		return fmt.Errorf("gator addfeed: error: the following arguments are required: name url")
 	}
 	feedName := cmd.arguments[0]
 	feedURL := cmd.arguments[1]
@@ -92,6 +93,34 @@ func handlerFeeds(s *state, cmd command) error {
 		fmt.Printf("--- url: %s\n", feed.Url)
 		fmt.Printf("--- added by: %s\n", user.Name)
 	}
+	return nil
+}
+
+func handlerFollow(s *state, cmd command) error {
+	if len(cmd.arguments) == 0 {
+		return fmt.Errorf("gator follow: error: the following arguments are required: url")
+	}
+	feedURL := cmd.arguments[0]
+
+	ctx := context.Background()
+	feedInfo, err := s.db.GetFeedByUrl(ctx, feedURL)
+	if err != nil {
+		return err
+	}
+
+	uid, err := uuid.Parse(s.config.CurrentUserID)
+	if err != nil {
+		return err
+	}
+	params := database.CreateFeedFollowParams{
+		UserID: uid,
+		FeedID: feedInfo.ID,
+	}
+	followedFeed, err := s.db.CreateFeedFollow(ctx, params)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("'%s' has followed '%s'\n", followedFeed.UserName, followedFeed.FeedName)
 	return nil
 }
 
