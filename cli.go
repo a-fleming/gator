@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"www.github.com/a-fleming/blog-aggregator/internal/config"
 	"www.github.com/a-fleming/blog-aggregator/internal/database"
@@ -44,8 +45,6 @@ func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) 
 		if s.config.CurrentUserID == "" {
 			return fmt.Errorf("you must be logged in to run '%s'", cmd.name)
 		}
-		fmt.Printf("state: %+v\n", s)
-		fmt.Printf("state.cfg: %+v\n", s.config)
 		user, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
 		if err != nil {
 			return err
@@ -130,6 +129,9 @@ func handlerFollow(s *state, cmd command, user database.User) error {
 	ctx := context.Background()
 	feedInfo, err := s.db.GetFeedByUrl(ctx, feedURL)
 	if err != nil {
+		if strings.Contains(err.Error(), "sql: no rows in result set") {
+			return fmt.Errorf("feed not found at '%s'", feedURL)
+		}
 		return err
 	}
 
