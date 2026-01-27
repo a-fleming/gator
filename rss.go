@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/xml"
+	"fmt"
 	"html"
 	"io"
 	"net/http"
@@ -25,7 +26,7 @@ type RSSItem struct {
 	PubDate     string `xml:"pubDate"`
 }
 
-func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
+func fetchFeed(ctx context.Context, feedURL string, timeoutSec int) (*RSSFeed, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", feedURL, nil)
 	if err != nil {
 		return &RSSFeed{}, err
@@ -33,7 +34,7 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	req.Header.Set("User-Agent", "gator")
 
 	client := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: time.Duration(timeoutSec) * time.Second,
 	}
 
 	res, err := client.Do(req)
@@ -64,4 +65,31 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	}
 
 	return &feedData, nil
+}
+
+func printFeed(feed RSSFeed) {
+	fmt.Printf("RSS Feed: %s\n", feed.Channel.Title)
+	fmt.Printf("Link: %s\n", feed.Channel.Link)
+	fmt.Printf("Description: %s\n", feed.Channel.Description)
+	for _, item := range feed.Channel.Item {
+		fmt.Printf(" * Title: %s\n", item.Title)
+	}
+}
+
+func scrapeFeeds(s *state, timeoutSec int) error {
+	ctx := context.Background()
+	feedDbInfo, err := s.db.GetNextFeedToFetch(ctx)
+	if err != nil {
+		return err
+	}
+	rssFeed, err := fetchFeed(ctx, feedDbInfo.Url, timeoutSec)
+	if err != nil {
+		return err
+	}
+	err = s.db.MarkFeedFetched(ctx, feedDbInfo.ID)
+	if err != nil {
+		return err
+	}
+	printFeed(*rssFeed)
+	return nil
 }

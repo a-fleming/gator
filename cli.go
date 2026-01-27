@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"www.github.com/a-fleming/blog-aggregator/internal/config"
 	"www.github.com/a-fleming/blog-aggregator/internal/database"
@@ -93,14 +94,28 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 }
 
 func handlerAggregate(s *state, cmd command) error {
-	feedURL := "https://www.wagslane.dev/index.xml"
-	ctx := context.Background()
-	feed, err := fetchFeed(ctx, feedURL)
+	if len(cmd.arguments) == 0 {
+		return fmt.Errorf("gator agg: error: the following argument is required: time_between_requests")
+	}
+	timeStr := cmd.arguments[0]
+	timeBetweenRequests, err := time.ParseDuration(timeStr)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("feed: %+v\n", feed)
-	return nil
+	fmt.Printf("Collecting feeds every %s\n", timeStr)
+	ticker := time.NewTicker(timeBetweenRequests)
+	for ; ; <-ticker.C {
+		httpTimeoutSec := 15
+		err = scrapeFeeds(s, httpTimeoutSec)
+		if err != nil {
+			return err
+		}
+		fmt.Println()
+		fmt.Println()
+		fmt.Println("----------------------------------------------------------")
+		fmt.Println()
+		fmt.Println()
+	}
 }
 
 func handlerFeeds(s *state, cmd command) error {
