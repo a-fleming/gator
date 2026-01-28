@@ -102,7 +102,7 @@ func handlerAggregate(s *state, cmd command) error {
 	timeStr := cmd.arguments[0]
 	timeBetweenRequests, err := time.ParseDuration(timeStr)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid interval %q (expected values like 30s, 5m, 1h)", timeStr)
 	}
 	fmt.Printf("collecting feeds every %s\n", timeStr)
 	ticker := time.NewTicker(timeBetweenRequests)
