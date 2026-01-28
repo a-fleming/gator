@@ -49,15 +49,16 @@ func (c *Config) SetUser(userName string, userID string) error {
 }
 
 func write(cfg Config) error {
-	jsonData, err := json.Marshal(cfg)
-	if err != nil {
-		return err
-	}
 	configPath, err := configFilePath()
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(configPath, jsonData, os.FileMode(os.O_CREATE))
+	jsonData, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return fmt.Errorf("config: marshal json: %w", err)
+	}
+	// 0600: user read.write only, typical for config with secrets
+	err = os.WriteFile(configPath, jsonData, 0600)
 	if err != nil {
 		return err
 	}
