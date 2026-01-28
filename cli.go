@@ -287,7 +287,7 @@ func handlerReset(s *state, cmd command) error {
 
 func handlerUnfollow(s *state, cmd command, user database.User) error {
 	if len(cmd.arguments) == 0 {
-		return fmt.Errorf("gator follow:un error: the following argument is required: url")
+		return fmt.Errorf("gator unfollow: error: the following argument is required: url")
 	}
 	feedURL := cmd.arguments[0]
 	ctx := context.Background()
