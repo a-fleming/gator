@@ -79,8 +79,8 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 	fmt.Printf("id: %+v\n", feedInfo.ID)
 	fmt.Printf("name: %s\n", feedName)
 	fmt.Printf("url: %s\n", feedURL)
-	fmt.Printf("createAt: %+v\n", feedInfo.CreatedAt)
-	fmt.Printf("updatedAt: %+v\n", feedInfo.UpdatedAt)
+	fmt.Printf("createAt: %v\n", feedInfo.CreatedAt)
+	fmt.Printf("updatedAt: %v\n", feedInfo.UpdatedAt)
 	fmt.Printf("user_id: %+v\n", feedInfo.ID)
 
 	createFeedFollowParams := database.CreateFeedFollowParams{
@@ -147,7 +147,7 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 
 		fmt.Printf("%d. Title: %s\n", idx+1, post.Title)
 		fmt.Printf("-- Link: %s\n", post.Url)
-		fmt.Printf("-- Date: %s\n", post.PublishedAt)
+		fmt.Printf("-- Date: %v\n", post.PublishedAt)
 		fmt.Printf("-- Description: %s\n", descriptionStr)
 		fmt.Println()
 	}
